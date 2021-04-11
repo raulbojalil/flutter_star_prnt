@@ -569,10 +569,27 @@ public class FlutterStarPrntPlugin : FlutterPlugin, MethodCallHandler {
     staticLayout.draw(canvas)
     return bitmap
   }
+
+  private fun getPort(portName: String, portSettings: String): StarIOPort {
+      var retries = 3
+      while(retries > 0) {
+         try {
+            return StarIOPort.getPort(portName, portSettings, 10000, applicationContext) 
+         }
+         catch(e: Exception){
+            Thread.sleep(600)
+            retries--
+         }
+      }
+
+      return StarIOPort.getPort(portName, portSettings, 10000, applicationContext)      
+   }
+
     private fun sendCommand(portName: String, portSettings: String, commands: ByteArray, context: Context, @NonNull result: Result) {
       var port: StarIOPort? = null 
       try {
-        port = StarIOPort.getPort(portName, portSettings, 10000, applicationContext)
+        //port = StarIOPort.getPort(portName, portSettings, 10000, applicationContext)
+        port = getPort(portName, portSettings)
         try {
           Thread.sleep(100)
         } catch (e: InterruptedException) {
@@ -597,6 +614,12 @@ public class FlutterStarPrntPlugin : FlutterPlugin, MethodCallHandler {
         result.success("Success")
       } catch (e: Exception) {
         result.error("STARIO_PORT_EXCEPTION", e.message, null)
+      } finally {
+        try {
+           // Port close
+           StarIOPort.releasePort(port)
+        }
+        catch (e: StarIOPortException) {}
       }
     }
 }
